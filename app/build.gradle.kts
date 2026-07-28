@@ -41,6 +41,12 @@ android {
     }
 }
 
+ksp {
+    // DairyDatabase has exportSchema = true; this is where Room writes the
+    // JSON schema snapshots that migrations get tested against later.
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
