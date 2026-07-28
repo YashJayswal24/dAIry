@@ -83,7 +83,10 @@ Full breakdown (APIs, permissions, RAM, storage, min SDK) in
 3. Push the model to the device (e.g. `adb push gemma-model.task
    /data/local/tmp/dairy/`) — an in-app downloader/picker is on the roadmap.
 4. Build and run `app` on a physical device (emulators are slow for on-device
-   LLM inference and may not have enough RAM).
+   LLM inference and may not have enough RAM). Step-by-step device setup
+   (Samsung phone, developer options, adb, pushing a model file, battery
+   optimization gotchas) is in
+   [docs/RUNNING_ON_DEVICE.md](docs/RUNNING_ON_DEVICE.md).
 
 ## Project structure
 
@@ -105,6 +108,8 @@ app/src/main/java/com/yashjayswal/dairy/
 
 ## Roadmap
 
+- [x] `EntryRepository` (embed-on-save, map rows back to domain model)
+- [x] Unit tests for `EmbeddingCodec`, `RagRetriever`, `EntryRepository`
 - [ ] Emotion + intensity picker UI
 - [ ] Finalize Room schema/migrations
 - [ ] Implement `EmbeddingEngine` (on-device embedding model)
@@ -112,7 +117,6 @@ app/src/main/java/com/yashjayswal/dairy/
 - [ ] Prompt template for RAG (inject retrieved entries as context)
 - [ ] Chat UI wired end-to-end
 - [ ] In-app model download/selection flow
-- [ ] Tests for `RagRetriever` cosine ranking
 
 ## Human in the loop
 
