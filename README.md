@@ -114,11 +114,14 @@ app/src/main/java/com/yashjayswal/dairy/
 - [x] Unit tests for `EmbeddingCodec`, `RagRetriever`, `EntryRepository`
 - [x] Implement `EmbeddingEngine` (`MediaPipeEmbeddingEngine`, MediaPipe Text Embedder)
 - [x] Implement `GemmaInferenceEngine` — `MediaPipeGemmaInferenceEngine` (bundled `.task` model, any device) plus `AiCoreGemmaInferenceEngine` (Gemini Nano via AICore, flagship devices only), picked at runtime by `GemmaInferenceEngineProvider`
-- [ ] Emotion + intensity picker UI
+- [x] Emotion + intensity picker UI (`EntryScreen`: text field, emotion chips, 1–5 slider, save button wired to `EntryRepository`, past-entries list)
+- [x] Prompt template for RAG — `RagPromptBuilder`, **simple version on purpose**: embeds the user's raw question directly and retrieves with it, no LLM-driven query rewriting/keyword-extraction step first. Dense embeddings already handle paraphrasing, and an extra LLM call would double on-device generation latency. Revisit only if real usage shows retrieval missing relevant entries, or once multi-turn follow-up questions are supported (that's the case query *condensation* — using conversation history to resolve an ambiguous follow-up — genuinely earns its cost, unlike single-shot keyword extraction).
+- [ ] Chat UI wired end-to-end — `ChatScreen` is currently a UI shell only (message list + input, local state); still needs to actually call `RagRetriever` → `RagPromptBuilder` → `GemmaInferenceEngineProvider` on send
+- [ ] Persist chat history (once wired, messages are in-memory only — lost on navigating away or app restart)
 - [ ] Finalize Room schema/migrations
-- [ ] Prompt template for RAG (inject retrieved entries as context)
-- [ ] Chat UI wired end-to-end
 - [ ] In-app model download/selection flow
+- [ ] Verify `MediaPipeGemmaInferenceEngine` end-to-end with a real `.task` file — only `AiCoreGemmaInferenceEngine` has been confirmed generating on-device so far; the file pulled from AI Edge Gallery turned out to be `.litertlm`, a different format (see REQUIREMENTS.md)
+- [ ] Confirm a successful entry save on a real device — `EntryScreen` → `EntryRepository` → Room is wired and unit-tested, but the on-device tap-to-save round-trip hasn't been confirmed yet (kept getting interrupted by the model file being wiped on reinstall mid-verification)
 
 ## Human in the loop
 
