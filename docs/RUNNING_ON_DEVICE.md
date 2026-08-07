@@ -112,31 +112,42 @@ Where to get these models and which size fits your phone's RAM is covered in
 `MediaPipeEmbeddingEngine` throws a clear error naming the exact path it
 looked at rather than failing silently.
 
-## 9. Verifying the embedding model actually works on your phone
+## 9. Verifying the embedding and Gemma models actually work on your phone
 
 There's no chat/entry UI wired up yet, so the way to confirm
-`MediaPipeEmbeddingEngine` genuinely works is an instrumented test — it runs
-on the device itself and calls real MediaPipe inference, unlike the unit
-tests in `app/src/test` which only run on the JVM against fakes.
+`MediaPipeEmbeddingEngine` and `MediaPipeGemmaInferenceEngine` genuinely work
+is an instrumented test — it runs on the device itself and calls real
+MediaPipe inference, unlike the unit tests in `app/src/test` which only run
+on the JVM against fakes.
 
-1. Do step 8 above for the embedding model (push `embedding_model.tflite`).
-2. With the phone connected and `adb devices` showing it:
-   ```
-   ./gradlew connectedDebugAndroidTest
-   ```
-   Or in Android Studio: open
-   `app/src/androidTest/java/.../MediaPipeEmbeddingEngineInstrumentedTest.kt`
-   and click the green ▶ next to the class.
-3. Three checks run for real on your phone: the model returns a non-empty,
-   finite vector; two semantically similar sentences embed closer together
-   (higher cosine similarity) than an unrelated one; and embedding the same
-   text twice is deterministic.
+With the phone connected and `adb devices` showing it, run either
+individually or both together:
 
-If the model file isn't pushed yet, this fails with the same "Embedding
-model not found at ..." message `MediaPipeEmbeddingEngine` throws — that's
+```
+./gradlew connectedDebugAndroidTest
+```
+
+Or in Android Studio: open the relevant test class under
+`app/src/androidTest/java/.../ai/embedding/` or `.../ai/llm/` and click the
+green ▶ next to it.
+
+**Embedding engine** (needs `embedding_model.tflite` pushed, step 8 above):
+three checks run for real on your phone — the model returns a non-empty,
+finite vector; two semantically similar sentences embed closer together
+(higher cosine similarity) than an unrelated one; and embedding the same
+text twice is deterministic.
+
+**Gemma inference engine** (needs `gemma-model.task` pushed, step 8 above):
+one check — a real prompt gets a non-blank generated response. This is a
+much heavier test than the embedding one (loading a multi-hundred-MB-to-GB
+model and running actual generation), so expect it to take noticeably
+longer and give it real time before assuming it's stuck.
+
+If a model file isn't pushed yet, the corresponding test fails with the
+same "model not found at ..." message the engine itself throws — that's
 expected, not a bug.
 
-## 9. Uninstalling
+## 10. Uninstalling
 
 ```
 adb uninstall com.yashjayswal.dairy

@@ -1,9 +1,9 @@
 package com.yashjayswal.dairy.ai.llm
 
 /**
- * Prompt in, generated text out. Implementation TODO: wrap
- * com.google.mediapipe:tasks-genai's LlmInference, loading a Gemma .task
- * model from local storage. See docs/REQUIREMENTS.md for model options.
+ * Prompt in, generated text out. Real implementation: [MediaPipeGemmaInferenceEngine].
+ * See docs/REQUIREMENTS.md for model options and docs/RUNNING_ON_DEVICE.md
+ * for how the model file gets onto a device.
  */
 interface GemmaInferenceEngine {
     suspend fun generate(prompt: String): String

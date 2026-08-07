@@ -111,9 +111,9 @@ app/src/main/java/com/yashjayswal/dairy/
 - [x] `EntryRepository` (embed-on-save, map rows back to domain model)
 - [x] Unit tests for `EmbeddingCodec`, `RagRetriever`, `EntryRepository`
 - [x] Implement `EmbeddingEngine` (`MediaPipeEmbeddingEngine`, MediaPipe Text Embedder)
+- [x] Implement `GemmaInferenceEngine` (`MediaPipeGemmaInferenceEngine`, MediaPipe LLM Inference)
 - [ ] Emotion + intensity picker UI
 - [ ] Finalize Room schema/migrations
-- [ ] Implement `GemmaInferenceEngine` (MediaPipe LLM Inference integration)
 - [ ] Prompt template for RAG (inject retrieved entries as context)
 - [ ] Chat UI wired end-to-end
 - [ ] In-app model download/selection flow
