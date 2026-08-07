@@ -8,7 +8,8 @@ unusual requirements — this is entirely about the LLM/embedding layer.
 
 | Purpose | API | Notes |
 |---|---|---|
-| Run Gemma on-device | [MediaPipe LLM Inference API](https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference) (`com.google.mediapipe:tasks-genai`) | Official Google path for Gemma on Android; CPU and GPU delegates. Takes a `.task` model file. |
+| Run Gemma on-device | [MediaPipe LLM Inference API](https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference) (`com.google.mediapipe:tasks-genai`) | Default path, works on any device meeting the RAM/storage requirements below. Takes a `.task` model file you provide (see below). |
+| Run Gemini Nano on-device (optional, when supported) | [ML Kit GenAI Prompt API](https://developers.google.com/ml-kit/genai/prompt/android) (`com.google.mlkit:genai-prompt`), backed by Android's AICore system service | Used automatically instead of MediaPipe when the device supports it — see `AiCoreGemmaInferenceEngine` / `GemmaInferenceEngineProvider`. No model file to manage; the OS handles download. **Flagship-tier chips only** (Pixel 8+, Galaxy S24+/Z Fold6+/Z Flip6+, some Snapdragon/Tensor/Dimensity flagships) — most devices will use the MediaPipe path instead. Requires Google Play services, and the calling app must be in the foreground when generating. |
 | Text embeddings on-device | [MediaPipe Text Embedder API](https://ai.google.dev/edge/mediapipe/solutions/text/text_embedder/android) (`com.google.mediapipe:tasks-text`) | Used both to embed diary entries on save and to embed questions at query time. Takes a `.tflite` embedding model (e.g. a Universal Sentence Encoder or Gecko/EmbeddingGemma model converted for MediaPipe). |
 | Local persistence | Room (AndroidX), backed by SQLite | Already bundled with Android — no extra runtime dependency. |
 | Networking | None required at runtime | `INTERNET` permission exists solely for the one-time model download step. |
@@ -82,6 +83,16 @@ Converted, ready-to-use Gemma models for MediaPipe LLM Inference are
 published on Google's model hub / Kaggle Models and Hugging Face under the
 Gemma license — check the current model card for size, quantization, and
 license terms for each variant before bundling one into a build or device.
+This step is only needed for the MediaPipe path — not needed if the device
+uses the AICore path instead (see above).
+
+**Format gotcha:** make sure the file you get is actually `.task`
+(MediaPipe's bundle format), not `.litertlm` — a newer, different container
+format used by some other tools (e.g. the Google AI Edge Gallery app
+downloads `.litertlm`). Renaming a `.litertlm` file to `.task` does not make
+it work; `MediaPipeGemmaInferenceEngine`/MediaPipe's native loader will fail
+with `Unable to open file` because the container format itself doesn't
+match, not because of the extension.
 
 ## Where to get an embedding model
 

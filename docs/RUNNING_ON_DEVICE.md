@@ -112,13 +112,20 @@ Where to get these models and which size fits your phone's RAM is covered in
 `MediaPipeEmbeddingEngine` throws a clear error naming the exact path it
 looked at rather than failing silently.
 
-## 9. Verifying the embedding and Gemma models actually work on your phone
+**Re-push after every reinstall:** `/sdcard/Android/data/<package>/files/`
+gets wiped whenever the app is reinstalled (e.g. every `installDebug` or
+`connectedDebugAndroidTest` run) — observed repeatedly on a Samsung Galaxy
+S24. Don't assume a model you pushed earlier is still there; re-run step 8
+after any rebuild+reinstall before trusting a "model not found" failure to
+mean anything beyond "it's not there right now."
+
+## 9. Verifying the embedding and Gemma engines actually work on your phone
 
 There's no chat/entry UI wired up yet, so the way to confirm
-`MediaPipeEmbeddingEngine` and `MediaPipeGemmaInferenceEngine` genuinely work
-is an instrumented test — it runs on the device itself and calls real
-MediaPipe inference, unlike the unit tests in `app/src/test` which only run
-on the JVM against fakes.
+`MediaPipeEmbeddingEngine`, `MediaPipeGemmaInferenceEngine`, and
+`AiCoreGemmaInferenceEngine` genuinely work is an instrumented test — it
+runs on the device itself and calls real on-device inference, unlike the
+unit tests in `app/src/test` which only run on the JVM against fakes.
 
 With the phone connected and `adb devices` showing it, run either
 individually or both together:
@@ -137,13 +144,23 @@ finite vector; two semantically similar sentences embed closer together
 (higher cosine similarity) than an unrelated one; and embedding the same
 text twice is deterministic.
 
-**Gemma inference engine** (needs `gemma-model.task` pushed, step 8 above):
-one check — a real prompt gets a non-blank generated response. This is a
-much heavier test than the embedding one (loading a multi-hundred-MB-to-GB
-model and running actual generation), so expect it to take noticeably
-longer and give it real time before assuming it's stuck.
+**Gemma inference engine (MediaPipe)** (needs `gemma-model.task` pushed,
+step 8 above): one check — a real prompt gets a non-blank generated
+response. This is a much heavier test than the embedding one (loading a
+multi-hundred-MB-to-GB model and running actual generation), so expect it
+to take noticeably longer and give it real time before assuming it's stuck.
 
-If a model file isn't pushed yet, the corresponding test fails with the
+**Gemma inference engine (AICore)** — `AiCoreGemmaInferenceEngineInstrumentedTest`:
+no model file needed at all, since AICore/Gemini Nano is managed entirely by
+the OS. On a supported device (see REQUIREMENTS.md) this launches
+`MainActivity` (AICore's Prompt API refuses background calls), checks
+availability, downloads Gemini Nano if needed, and generates a real
+response — verified working end-to-end on a Galaxy S24 in ~6 seconds once
+the model was already downloaded. On an unsupported device this test
+passes trivially (skips itself) rather than failing, since "unsupported" is
+expected there.
+
+If a model file isn't pushed yet, the MediaPipe-backed tests fail with the
 same "model not found at ..." message the engine itself throws — that's
 expected, not a bug.
 

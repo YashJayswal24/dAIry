@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
 
@@ -36,10 +37,6 @@ android {
     buildFeatures {
         compose = true
     }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
 }
 
 ksp {
@@ -59,9 +56,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
 
     // Local storage: diary entries + their embeddings (see data/local)
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.8.4")
+    implementation("androidx.room:room-ktx:2.8.4")
+    ksp("androidx.room:room-compiler:2.8.4")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
@@ -70,6 +67,11 @@ dependencies {
 
     // On-device text embeddings (Google AI Edge) — see ai/embedding
     implementation("com.google.mediapipe:tasks-text:0.10.14")
+
+    // On-device Gemini Nano via AICore — used when the device supports it
+    // (flagship-tier chips only), falling back to MediaPipe otherwise. See
+    // ai/llm/AiCoreGemmaInferenceEngine and ai/llm/GemmaInferenceEngineProvider.
+    implementation("com.google.mlkit:genai-prompt:1.0.0-beta2")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")

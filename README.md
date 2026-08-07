@@ -48,7 +48,7 @@ Full write-up in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Language / UI | Kotlin, Jetpack Compose, Material 3 |
 | Local storage | Room (SQLite) — entries + their embeddings live in one table |
 | Retrieval (RAG) | Brute-force cosine similarity, computed in-app (no vector DB dependency) |
-| On-device LLM | [Google AI Edge — MediaPipe LLM Inference API](https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference) running a Gemma `.task` model |
+| On-device LLM | [Google AI Edge — MediaPipe LLM Inference API](https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference) running a Gemma `.task` model, **or** [ML Kit GenAI Prompt API](https://developers.google.com/ml-kit/genai/prompt/android) (AICore/Gemini Nano) when the device supports it — see [GemmaInferenceEngineProvider](app/src/main/java/com/yashjayswal/dairy/ai/llm/GemmaInferenceEngineProvider.kt) |
 | On-device embeddings | [MediaPipe Text Embedder API](https://ai.google.dev/edge/mediapipe/solutions/text/text_embedder/android) running a `.tflite` embedding model |
 | Concurrency | Kotlin Coroutines |
 
@@ -98,7 +98,9 @@ app/src/main/java/com/yashjayswal/dairy/
 ├── domain/model/         # DiaryEntry, Emotion
 ├── ai/
 │   ├── embedding/        # EmbeddingEngine interface (text -> vector)
-│   ├── llm/              # GemmaInferenceEngine interface (prompt -> text)
+│   ├── llm/              # GemmaInferenceEngine interface (prompt -> text);
+│   │                     # MediaPipe + AICore implementations, picked at
+│   │                     # runtime by GemmaInferenceEngineProvider
 │   └── rag/              # RagRetriever: cosine similarity over stored entries
 └── ui/
     ├── entry/            # write-an-entry screen
@@ -111,7 +113,7 @@ app/src/main/java/com/yashjayswal/dairy/
 - [x] `EntryRepository` (embed-on-save, map rows back to domain model)
 - [x] Unit tests for `EmbeddingCodec`, `RagRetriever`, `EntryRepository`
 - [x] Implement `EmbeddingEngine` (`MediaPipeEmbeddingEngine`, MediaPipe Text Embedder)
-- [x] Implement `GemmaInferenceEngine` (`MediaPipeGemmaInferenceEngine`, MediaPipe LLM Inference)
+- [x] Implement `GemmaInferenceEngine` — `MediaPipeGemmaInferenceEngine` (bundled `.task` model, any device) plus `AiCoreGemmaInferenceEngine` (Gemini Nano via AICore, flagship devices only), picked at runtime by `GemmaInferenceEngineProvider`
 - [ ] Emotion + intensity picker UI
 - [ ] Finalize Room schema/migrations
 - [ ] Prompt template for RAG (inject retrieved entries as context)

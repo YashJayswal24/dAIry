@@ -31,6 +31,16 @@ The human maintainer must, at all times:
   of using a vector database, see [ARCHITECTURE.md](ARCHITECTURE.md)) are
   recorded with their reasoning, not just their conclusion, so the "why"
   survives past the conversation that produced it.
+- One explicit, deliberate exception to "retain full control over which
+  model is loaded": `AiCoreGemmaInferenceEngine` uses Android's AICore
+  system service (Gemini Nano), where the OS — not this app — controls the
+  exact model version and update timing. This was a knowing tradeoff, made
+  by the maintainer with the alternative laid out first (see
+  [REQUIREMENTS.md](REQUIREMENTS.md)): it's an *optional, secondary* path
+  used only on devices that support it, purely to skip manual model-file
+  management on flagship hardware. `MediaPipeGemmaInferenceEngine` (an
+  explicit, app-controlled `.task` file) remains the default and is what
+  every other device falls back to — see `GemmaInferenceEngineProvider`.
 - AI-assisted contributions are reviewed the same way any other contribution
   would be: understanding comes before merging, not after.
 
