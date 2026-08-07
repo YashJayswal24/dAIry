@@ -14,6 +14,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -67,7 +68,17 @@ dependencies {
     // On-device Gemma inference (Google AI Edge) — see ai/llm
     implementation("com.google.mediapipe:tasks-genai:0.10.14")
 
+    // On-device text embeddings (Google AI Edge) — see ai/embedding
+    implementation("com.google.mediapipe:tasks-text:0.10.14")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+
+    // Instrumented tests: run on a real device/emulator (needed for anything
+    // that touches actual MediaPipe/on-device inference — see
+    // ai/embedding/MediaPipeEmbeddingEngineInstrumentedTest).
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
 }

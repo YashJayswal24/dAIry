@@ -49,7 +49,7 @@ Full write-up in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Local storage | Room (SQLite) — entries + their embeddings live in one table |
 | Retrieval (RAG) | Brute-force cosine similarity, computed in-app (no vector DB dependency) |
 | On-device LLM | [Google AI Edge — MediaPipe LLM Inference API](https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference) running a Gemma `.task` model |
-| On-device embeddings | A small on-device embedding model (e.g. EmbeddingGemma) via MediaPipe Tasks / LiteRT |
+| On-device embeddings | [MediaPipe Text Embedder API](https://ai.google.dev/edge/mediapipe/solutions/text/text_embedder/android) running a `.tflite` embedding model |
 | Concurrency | Kotlin Coroutines |
 
 Why brute-force cosine similarity instead of a vector database: at realistic
@@ -110,9 +110,9 @@ app/src/main/java/com/yashjayswal/dairy/
 
 - [x] `EntryRepository` (embed-on-save, map rows back to domain model)
 - [x] Unit tests for `EmbeddingCodec`, `RagRetriever`, `EntryRepository`
+- [x] Implement `EmbeddingEngine` (`MediaPipeEmbeddingEngine`, MediaPipe Text Embedder)
 - [ ] Emotion + intensity picker UI
 - [ ] Finalize Room schema/migrations
-- [ ] Implement `EmbeddingEngine` (on-device embedding model)
 - [ ] Implement `GemmaInferenceEngine` (MediaPipe LLM Inference integration)
 - [ ] Prompt template for RAG (inject retrieved entries as context)
 - [ ] Chat UI wired end-to-end

@@ -9,7 +9,7 @@ unusual requirements — this is entirely about the LLM/embedding layer.
 | Purpose | API | Notes |
 |---|---|---|
 | Run Gemma on-device | [MediaPipe LLM Inference API](https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference) (`com.google.mediapipe:tasks-genai`) | Official Google path for Gemma on Android; CPU and GPU delegates. Takes a `.task` model file. |
-| Text embeddings on-device | A small on-device embedding model (e.g. EmbeddingGemma) via MediaPipe Tasks / LiteRT | Used both to embed diary entries on save and to embed questions at query time. |
+| Text embeddings on-device | [MediaPipe Text Embedder API](https://ai.google.dev/edge/mediapipe/solutions/text/text_embedder/android) (`com.google.mediapipe:tasks-text`) | Used both to embed diary entries on save and to embed questions at query time. Takes a `.tflite` embedding model (e.g. a Universal Sentence Encoder or Gecko/EmbeddingGemma model converted for MediaPipe). |
 | Local persistence | Room (AndroidX), backed by SQLite | Already bundled with Android — no extra runtime dependency. |
 | Networking | None required at runtime | `INTERNET` permission exists solely for the one-time model download step. |
 
@@ -82,3 +82,17 @@ Converted, ready-to-use Gemma models for MediaPipe LLM Inference are
 published on Google's model hub / Kaggle Models and Hugging Face under the
 Gemma license — check the current model card for size, quantization, and
 license terms for each variant before bundling one into a build or device.
+
+## Where to get an embedding model
+
+MediaPipe's [Text Embedder models page](https://developers.google.com/edge/mediapipe/solutions/text/text_embedder/index#models)
+lists two officially hosted options:
+
+| Model | Format | Download |
+|---|---|---|
+| Universal Sentence Encoder (smaller, what `MediaPipeEmbeddingEngine` is set up for) | `.tflite` | `https://storage.googleapis.com/mediapipe-models/text_embedder/universal_sentence_encoder/float32/latest/universal_sentence_encoder.tflite` |
+| EmbeddingGemma 300M (larger, better quality) | `.task` | `https://storage.googleapis.com/mediapipe-models/text_embedder/embedding_gemma/int4int8/latest/embedding_gemma.task` |
+
+Download the Universal Sentence Encoder file, rename it to
+`embedding_model.tflite` (the exact name `MediaPipeEmbeddingEngine` looks
+for), and push it per [RUNNING_ON_DEVICE.md](RUNNING_ON_DEVICE.md) step 8.

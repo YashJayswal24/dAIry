@@ -74,20 +74,67 @@ which an in-progress LLM generation can look like. Once you're testing actual
 model inference, set the app's battery usage to **Unrestricted** so a
 generation isn't killed mid-response.
 
-## 8. Getting a model onto the device (once `ai/llm` is implemented)
+## 8. Getting models onto the device
 
 There's no in-app downloader yet (see the Roadmap in the main
-[README](../README.md)). Until there is, push a `.task` model file directly
-into the app's own external files directory so scoped storage doesn't get in
-the way:
+[README](../README.md)). Until there is, push model files directly into the
+app's own external files directory so scoped storage doesn't get in the way.
+Both `ai/embedding` (`MediaPipeEmbeddingEngine`) and, once implemented,
+`ai/llm` read from the same `files/models/` directory:
 
 ```
-adb shell run-as com.yashjayswal.dairy mkdir -p files/models
+adb shell mkdir -p /sdcard/Android/data/com.yashjayswal.dairy/files/models
+
+# Embedding model — required now, MediaPipeEmbeddingEngine looks for this
+# exact file name (see MediaPipeEmbeddingEngine.MODEL_FILE_NAME):
+adb push embedding_model.tflite /sdcard/Android/data/com.yashjayswal.dairy/files/models/
+
+# Gemma chat model — needed once ai/llm is implemented:
 adb push gemma-model.task /sdcard/Android/data/com.yashjayswal.dairy/files/models/
 ```
 
-Where to get a `.task` model and which size fits your phone's RAM is covered
-in [REQUIREMENTS.md](REQUIREMENTS.md).
+**Note:** this is `getExternalFilesDir()` storage (`/sdcard/Android/data/...`),
+not the app's internal storage — don't use `adb shell run-as ... mkdir`
+here, that creates a directory under internal storage instead, a different
+path than the one `adb push` targets above, and the push then fails with
+`remote secure_mkdirs() failed`. Plain `adb shell mkdir -p ...` on the
+`/sdcard/...` path (no `run-as`) is correct and doesn't need root.
+
+**Git Bash on Windows:** MSYS silently rewrites any argument starting with
+`/` (like `/sdcard/...`) into a Windows path before it reaches `adb.exe`,
+breaking these commands. Prefix each `adb` command with `MSYS_NO_PATHCONV=1`
+when running from Git Bash, e.g.
+`MSYS_NO_PATHCONV=1 adb push embedding_model.tflite /sdcard/...`. PowerShell
+doesn't have this problem.
+
+Where to get these models and which size fits your phone's RAM is covered in
+[REQUIREMENTS.md](REQUIREMENTS.md). If the embedding model isn't there yet,
+`MediaPipeEmbeddingEngine` throws a clear error naming the exact path it
+looked at rather than failing silently.
+
+## 9. Verifying the embedding model actually works on your phone
+
+There's no chat/entry UI wired up yet, so the way to confirm
+`MediaPipeEmbeddingEngine` genuinely works is an instrumented test — it runs
+on the device itself and calls real MediaPipe inference, unlike the unit
+tests in `app/src/test` which only run on the JVM against fakes.
+
+1. Do step 8 above for the embedding model (push `embedding_model.tflite`).
+2. With the phone connected and `adb devices` showing it:
+   ```
+   ./gradlew connectedDebugAndroidTest
+   ```
+   Or in Android Studio: open
+   `app/src/androidTest/java/.../MediaPipeEmbeddingEngineInstrumentedTest.kt`
+   and click the green ▶ next to the class.
+3. Three checks run for real on your phone: the model returns a non-empty,
+   finite vector; two semantically similar sentences embed closer together
+   (higher cosine similarity) than an unrelated one; and embedding the same
+   text twice is deterministic.
+
+If the model file isn't pushed yet, this fails with the same "Embedding
+model not found at ..." message `MediaPipeEmbeddingEngine` throws — that's
+expected, not a bug.
 
 ## 9. Uninstalling
 
