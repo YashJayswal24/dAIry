@@ -1,6 +1,7 @@
 package com.yashjayswal.dairy.ui.entry
 
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,8 +13,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
@@ -48,100 +50,135 @@ fun EntryScreen(entryRepository: EntryRepository, modifier: Modifier = Modifier)
     val coroutineScope = rememberCoroutineScope()
     val entries by entryRepository.observeAll().collectAsState(initial = emptyList())
 
-    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        Text("Write today's entry", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(8.dp))
+    LazyColumn(
+        modifier = modifier.fillMaxSize().padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        item {
+            Spacer(Modifier.height(12.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("What's on your mind?", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = text,
-            onValueChange = { text = it },
-            label = { Text("What's on your mind?") },
-            minLines = 3,
-            modifier = Modifier.fillMaxWidth()
-        )
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        placeholder = { Text("Today I...") },
+                        minLines = 3,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-        Spacer(Modifier.height(12.dp))
-        Text("Emotion", style = MaterialTheme.typography.labelLarge)
-        Spacer(Modifier.height(4.dp))
-        Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-            Emotion.entries.forEach { option ->
-                FilterChip(
-                    selected = emotion == option,
-                    onClick = { emotion = option },
-                    label = { Text(option.name.lowercase().replaceFirstChar(Char::uppercase)) },
-                    modifier = Modifier.padding(end = 8.dp)
+                    Spacer(Modifier.height(16.dp))
+                    Text("How are you feeling?", style = MaterialTheme.typography.labelLarge)
+                    Spacer(Modifier.height(8.dp))
+                    Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                        Emotion.entries.forEach { option ->
+                            FilterChip(
+                                selected = emotion == option,
+                                onClick = { emotion = option },
+                                label = { Text("${option.emoji()} ${option.label()}") },
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    Text("Intensity: ${intensity.roundToInt()}/5", style = MaterialTheme.typography.labelLarge)
+                    Slider(
+                        value = intensity,
+                        onValueChange = { intensity = it },
+                        valueRange = 1f..5f,
+                        steps = 3
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            val entryText = text
+                            isSaving = true
+                            errorMessage = null
+                            coroutineScope.launch {
+                                try {
+                                    entryRepository.save(entryText, emotion, intensity.roundToInt())
+                                    text = ""
+                                    emotion = Emotion.NEUTRAL
+                                    intensity = 3f
+                                } catch (e: Exception) {
+                                    errorMessage = e.message ?: "Failed to save entry."
+                                } finally {
+                                    isSaving = false
+                                }
+                            }
+                        },
+                        enabled = text.isNotBlank() && !isSaving,
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(if (isSaving) "Saving…" else "Save entry")
+                    }
+
+                    errorMessage?.let { message ->
+                        Spacer(Modifier.height(4.dp))
+                        Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+            Text("Past entries", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+
+            if (entries.isEmpty()) {
+                Text(
+                    "No entries yet — write your first one above.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        Spacer(Modifier.height(12.dp))
-        Text("Intensity: ${intensity.roundToInt()}/5", style = MaterialTheme.typography.labelLarge)
-        Slider(
-            value = intensity,
-            onValueChange = { intensity = it },
-            valueRange = 1f..5f,
-            steps = 3
-        )
-
-        Spacer(Modifier.height(8.dp))
-        Button(
-            onClick = {
-                val entryText = text
-                isSaving = true
-                errorMessage = null
-                coroutineScope.launch {
-                    try {
-                        entryRepository.save(entryText, emotion, intensity.roundToInt())
-                        text = ""
-                        emotion = Emotion.NEUTRAL
-                        intensity = 3f
-                    } catch (e: Exception) {
-                        errorMessage = e.message ?: "Failed to save entry."
-                    } finally {
-                        isSaving = false
-                    }
-                }
-            },
-            enabled = text.isNotBlank() && !isSaving,
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text(if (isSaving) "Saving…" else "Save entry")
+        items(entries, key = { it.id }) { entry ->
+            EntryCard(entry)
+            Spacer(Modifier.height(8.dp))
         }
 
-        errorMessage?.let { message ->
-            Spacer(Modifier.height(4.dp))
-            Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        }
-
-        Spacer(Modifier.height(24.dp))
-        Text("Past entries", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(8.dp))
-
-        if (entries.isEmpty()) {
-            Text("No entries yet.", style = MaterialTheme.typography.bodyMedium)
-        } else {
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(entries, key = { it.id }) { entry ->
-                    EntryRow(entry)
-                    HorizontalDivider()
-                }
-            }
-        }
+        item { Spacer(Modifier.height(16.dp)) }
     }
 }
 
 @Composable
-private fun EntryRow(entry: DiaryEntry) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(entry.text, style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "${entry.emotion.name.lowercase().replaceFirstChar(Char::uppercase)} · " +
-                "${entry.emotionIntensity}/5 · ${formatDate(entry.createdAt)}",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+private fun EntryCard(entry: DiaryEntry) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(entry.text, style = MaterialTheme.typography.bodyLarge)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "${entry.emotion.emoji()} ${entry.emotion.label()} · " +
+                    "${entry.emotionIntensity}/5 · ${formatDate(entry.createdAt)}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
+}
+
+private fun Emotion.label(): String = name.lowercase().replaceFirstChar(Char::uppercase)
+
+private fun Emotion.emoji(): String = when (this) {
+    Emotion.JOY -> "😊"
+    Emotion.SADNESS -> "😢"
+    Emotion.ANGER -> "😠"
+    Emotion.FEAR -> "😨"
+    Emotion.SURPRISE -> "😲"
+    Emotion.CALM -> "😌"
+    Emotion.NEUTRAL -> "😐"
 }
 
 private fun formatDate(epochMillis: Long): String =

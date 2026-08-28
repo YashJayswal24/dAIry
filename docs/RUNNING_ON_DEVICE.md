@@ -164,7 +164,37 @@ If a model file isn't pushed yet, the MediaPipe-backed tests fail with the
 same "model not found at ..." message the engine itself throws — that's
 expected, not a bug.
 
-## 10. Uninstalling
+## 10. Seeding realistic test data
+
+`SeedPepysDiaryEntriesInstrumentedTest` (`app/src/androidTest/java/.../testdata/`)
+loads 300 real diary-style paragraphs (public domain, excerpted from Samuel
+Pepys' diary, Project Gutenberg #4200 — bundled as
+`app/src/androidTest/assets/pepys_diary_entries.json`) into the actual
+on-device database via the real `EntryRepository`, computing real embeddings.
+Useful for exercising `RagRetriever`/chat against realistic volume instead of
+a couple of hand-typed entries. Every seeded entry is saved as
+`Emotion.NEUTRAL` / intensity 3 (Pepys' diary has no emotion labels — this is
+a placeholder, not a claim).
+
+**Important:** by default, `./gradlew connectedDebugAndroidTest` uninstalls
+both the app-under-test and the test APK immediately after the run — which
+wipes any data the test just wrote (this is what caused the app to
+mysteriously "disappear" a few times during development; it's normal AGP
+behavior, not a device or Samsung security quirk). To seed data that
+actually survives for you to use afterward, add
+`-Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true`:
+
+```
+./gradlew connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.yashjayswal.dairy.testdata.SeedPepysDiaryEntriesInstrumentedTest \
+  -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
+```
+
+Re-running appends the same 300 entries again rather than deduplicating, so
+don't run it as part of the routine full test suite — target it explicitly
+as shown above.
+
+## 11. Uninstalling
 
 ```
 adb uninstall com.yashjayswal.dairy

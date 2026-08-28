@@ -8,14 +8,22 @@ package com.yashjayswal.dairy.ai.rag
  * embeddings already handle paraphrasing; an extra LLM call would double
  * on-device generation latency for a benefit that mainly shows up with
  * multi-turn follow-up questions, which this chat doesn't have yet).
+ *
+ * This is a conversational agent that *has* retrieval, not a strict RAG
+ * refusal bot: [RagRetriever] always returns its top-K entries regardless of
+ * how relevant they actually are (it has no similarity cutoff), so the model
+ * is told to use them only when they're actually relevant to the message —
+ * a plain "hi" should get a normal reply, not a forced diary reference or a
+ * refusal.
  */
 object RagPromptBuilder {
     fun build(question: String, contextEntries: List<String>): String {
         if (contextEntries.isEmpty()) {
-            return "You are the user's personal diary assistant. The diary has no " +
-                "entries yet, so you have no context to draw on. Politely tell the " +
-                "user there's nothing to answer from yet instead of guessing. " +
-                "Their question was: \"$question\""
+            return "You are the user's personal diary assistant: a warm, " +
+                "conversational agent that can also look up their past diary " +
+                "entries. They don't have any entries yet, so just chat with " +
+                "them normally — don't invent or assume anything about their " +
+                "diary. Their message was: \"$question\""
         }
 
         val context = contextEntries
@@ -23,15 +31,18 @@ object RagPromptBuilder {
             .joinToString("\n")
 
         return """
-            You are the user's personal diary assistant. Answer the question
-            using ONLY the diary entries below as context. If the entries
-            don't contain enough information to answer, say so honestly
-            instead of guessing.
+            You are the user's personal diary assistant: a warm, conversational
+            agent that can also look up their past diary entries. Below are
+            entries that might be relevant to their message. Use them if they
+            actually help answer; if the message is just small talk or doesn't
+            need them, reply normally like any conversational assistant would —
+            don't force in a diary reference where it doesn't belong, and don't
+            claim something the entries don't actually support.
 
-            Diary entries:
+            Possibly relevant diary entries:
             $context
 
-            Question: $question
+            Message: $question
         """.trimIndent()
     }
 }

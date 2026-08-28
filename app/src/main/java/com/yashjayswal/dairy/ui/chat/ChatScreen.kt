@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -20,44 +21,48 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.yashjayswal.dairy.ai.llm.GemmaInferenceEngine
+import com.yashjayswal.dairy.ai.rag.RagRetriever
 import kotlinx.coroutines.launch
 
 data class ChatMessage(val text: String, val isFromUser: Boolean)
 
 /**
- * UI shell only for now — sending appends the user's message to local state
- * but doesn't call RagRetriever/GemmaInferenceEngineProvider yet. That's a
- * deliberate, separate next step (see Roadmap in README.md): this screen is
- * just the place the real wiring will plug into.
+ * On Send: [ChatAnswerer] retrieves relevant entries, builds the prompt, and
+ * generates a reply via [GemmaInferenceEngine] (picked and cached by
+ * [com.yashjayswal.dairy.DairyApplication.gemmaInferenceEngine] — the first
+ * call on a device may be slow since it can involve an AICore feature
+ * check/download).
  */
 @Composable
-fun ChatScreen(modifier: Modifier = Modifier) {
+fun ChatScreen(
+    ragRetriever: RagRetriever,
+    getGemmaInferenceEngine: suspend () -> GemmaInferenceEngine,
+    modifier: Modifier = Modifier
+) {
     var input by remember { mutableStateOf("") }
+    var isGenerating by remember { mutableStateOf(false) }
     val messages = remember { mutableStateListOf<ChatMessage>() }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        Text("Ask your diary", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "Not wired up to the AI yet — this is just the screen it'll live in.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(12.dp))
-
         if (messages.isEmpty()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("No messages yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Ask me anything about your diary — or just say hi.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         } else {
             LazyColumn(
@@ -66,6 +71,9 @@ fun ChatScreen(modifier: Modifier = Modifier) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(messages) { message -> ChatBubble(message) }
+                if (isGenerating) {
+                    item { ChatBubble(ChatMessage(text = "Thinking…", isFromUser = false)) }
+                }
             }
         }
 
@@ -75,18 +83,26 @@ fun ChatScreen(modifier: Modifier = Modifier) {
                 value = input,
                 onValueChange = { input = it },
                 placeholder = { Text("Ask a question...") },
+                enabled = !isGenerating,
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
             Button(
                 onClick = {
-                    val messageText = input
-                    if (messageText.isBlank()) return@Button
-                    messages.add(ChatMessage(text = messageText, isFromUser = true))
+                    val question = input
+                    if (question.isBlank()) return@Button
+                    messages.add(ChatMessage(text = question, isFromUser = true))
                     input = ""
-                    coroutineScope.launch { listState.animateScrollToItem(messages.lastIndex) }
+                    isGenerating = true
+                    coroutineScope.launch {
+                        listState.animateScrollToItem(messages.lastIndex)
+                        val reply = ChatAnswerer.answer(question, ragRetriever, getGemmaInferenceEngine)
+                        messages.add(ChatMessage(text = reply, isFromUser = false))
+                        isGenerating = false
+                        listState.animateScrollToItem(messages.lastIndex)
+                    }
                 },
-                enabled = input.isNotBlank()
+                enabled = input.isNotBlank() && !isGenerating
             ) {
                 Text("Send")
             }
@@ -106,9 +122,12 @@ private fun ChatBubble(message: ChatMessage) {
             } else {
                 MaterialTheme.colorScheme.surfaceVariant
             },
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.widthIn(max = 280.dp)
         ) {
-            Text(message.text, modifier = Modifier.padding(12.dp))
+            SelectionContainer {
+                Text(message.text, modifier = Modifier.padding(12.dp))
+            }
         }
     }
 }
