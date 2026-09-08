@@ -57,7 +57,12 @@ private val DarkColors = darkColorScheme(
 )
 
 @Composable
-fun DairyTheme(content: @Composable () -> Unit) {
-    val colors = if (isSystemInDarkTheme()) DarkColors else LightColors
+fun DairyTheme(themeMode: ThemeMode = ThemeMode.SYSTEM, content: @Composable () -> Unit) {
+    val isDark = when (themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
+    val colors = if (isDark) DarkColors else LightColors
     MaterialTheme(colorScheme = colors, content = content)
 }
