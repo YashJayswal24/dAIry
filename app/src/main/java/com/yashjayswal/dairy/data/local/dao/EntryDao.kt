@@ -17,4 +17,22 @@ interface EntryDao {
     // Used by RagRetriever for the brute-force cosine similarity scan.
     @Query("SELECT * FROM entries")
     suspend fun getAllForSearch(): List<EntryEntity>
+
+    // createdAt is deliberately left untouched -- editing an entry
+    // changes what it says, not when it was written.
+    @Query(
+        "UPDATE entries SET title = :title, text = :text, emotion = :emotion, " +
+            "emotionIntensity = :emotionIntensity, embedding = :embedding WHERE id = :id"
+    )
+    suspend fun update(
+        id: Long,
+        title: String,
+        text: String,
+        emotion: String,
+        emotionIntensity: Int,
+        embedding: ByteArray
+    )
+
+    @Query("DELETE FROM entries WHERE id = :id")
+    suspend fun delete(id: Long)
 }

@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "entries")
 data class EntryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String = "",
     val text: String,
     val emotion: String,
     val emotionIntensity: Int,

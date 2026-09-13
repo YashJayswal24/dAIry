@@ -14,6 +14,15 @@ private class FakeEntryDao(private val entries: List<EntryEntity>) : EntryDao {
     override suspend fun insert(entry: EntryEntity): Long = error("not used in this test")
     override fun observeAll(): Flow<List<EntryEntity>> = flowOf(entries)
     override suspend fun getAllForSearch(): List<EntryEntity> = entries
+    override suspend fun update(
+        id: Long,
+        title: String,
+        text: String,
+        emotion: String,
+        emotionIntensity: Int,
+        embedding: ByteArray
+    ): Unit = error("not used in this test")
+    override suspend fun delete(id: Long): Unit = error("not used in this test")
 }
 
 private class FakeEmbeddingEngine(private val vector: FloatArray) : EmbeddingEngine {

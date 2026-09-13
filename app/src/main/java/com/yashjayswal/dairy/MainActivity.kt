@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LightMode
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.yashjayswal.dairy.ai.llm.GemmaInferenceEngine
 import com.yashjayswal.dairy.ai.rag.RagRetriever
 import com.yashjayswal.dairy.data.repository.EntryRepository
+import com.yashjayswal.dairy.ui.calendar.CalendarScreen
 import com.yashjayswal.dairy.ui.chat.ChatScreen
 import com.yashjayswal.dairy.ui.entry.EntryScreen
 import com.yashjayswal.dairy.ui.theme.DairyTheme
@@ -63,6 +65,7 @@ class MainActivity : ComponentActivity() {
 
 private enum class Screen(val label: String, val icon: ImageVector) {
     ENTRY("Write", Icons.Filled.Edit),
+    CALENDAR("Calendar", Icons.Filled.CalendarMonth),
     CHAT("Ask", Icons.AutoMirrored.Filled.Chat)
 }
 
@@ -116,6 +119,7 @@ private fun DairyApp(
     ) { innerPadding ->
         when (screen) {
             Screen.ENTRY -> EntryScreen(entryRepository, modifier = Modifier.padding(innerPadding))
+            Screen.CALENDAR -> CalendarScreen(entryRepository, modifier = Modifier.padding(innerPadding))
             Screen.CHAT -> ChatScreen(ragRetriever, getGemmaInferenceEngine, modifier = Modifier.padding(innerPadding))
         }
     }

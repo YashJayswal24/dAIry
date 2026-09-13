@@ -8,6 +8,7 @@ import com.yashjayswal.dairy.ai.llm.GemmaInferenceEngine
 import com.yashjayswal.dairy.ai.llm.GemmaInferenceEngineProvider
 import com.yashjayswal.dairy.ai.rag.RagRetriever
 import com.yashjayswal.dairy.data.local.DairyDatabase
+import com.yashjayswal.dairy.data.local.MIGRATION_1_2
 import com.yashjayswal.dairy.data.repository.EntryRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -25,7 +26,9 @@ class DairyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        val database = Room.databaseBuilder(this, DairyDatabase::class.java, "dairy.db").build()
+        val database = Room.databaseBuilder(this, DairyDatabase::class.java, "dairy.db")
+            .addMigrations(MIGRATION_1_2)
+            .build()
         val embeddingEngine: EmbeddingEngine = MediaPipeEmbeddingEngine(this)
         entryRepository = EntryRepository(database.entryDao(), embeddingEngine)
         ragRetriever = RagRetriever(database.entryDao(), embeddingEngine)

@@ -56,6 +56,15 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui-tooling-preview")
 
+    // Calendar tab month grid (see ui/calendar). 2.10.1 is the actual
+    // latest stable, but every version from 2.7.0 up pulls in a Compose
+    // UI transitive dependency that requires compileSdk 35 (we're on 34)
+    // -- pinned to 2.6.1 (Dec 2023), the newest version still compatible,
+    // to avoid an unrelated toolchain upgrade for this one feature. See
+    // docs/TODO.md for the compileSdk/AGP bump this should revisit once
+    // that's a deliberate decision, not a side effect.
+    implementation("com.kizitonwose.calendar:compose:2.6.1")
+
     // Local storage: diary entries + their embeddings (see data/local)
     implementation("androidx.room:room-runtime:2.8.4")
     implementation("androidx.room:room-ktx:2.8.4")

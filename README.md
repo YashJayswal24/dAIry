@@ -122,11 +122,16 @@ work back up).
 - [x] Prompt template for RAG — `RagPromptBuilder`, **simple version on purpose**: embeds the user's raw question directly and retrieves with it, no LLM-driven query rewriting/keyword-extraction step first. Dense embeddings already handle paraphrasing, and an extra LLM call would double on-device generation latency. Revisit only if real usage shows retrieval missing relevant entries, or once multi-turn follow-up questions are supported (that's the case query *condensation* — using conversation history to resolve an ambiguous follow-up — genuinely earns its cost, unlike single-shot keyword extraction).
 - [x] Chat UI wired end-to-end — `ChatScreen` calls `ChatAnswerer` (`RagRetriever` → `RagPromptBuilder` → the cached `GemmaInferenceEngine`) on send; the wiring and error path are verified on a Galaxy S26 Ultra, real generated replies not yet read (see TODO.md)
 - [x] Visual redesign — custom warm color theme (was untouched Material3 defaults), `Scaffold` with a top app bar + icon `NavigationBar`, card-based `EntryScreen` with emoji mood chips, verified on-device in dark mode (see TODO.md for the "My Diary"-inspired future feature list: calendar view, search, tags, etc.)
+- [x] Judged chat eval suite ([docs/EVAL_PROMPTS.md](docs/EVAL_PROMPTS.md)) — all 15 ground-truthed prompts run and scored on-device via a debug-only instrumented test harness (calls `ChatAnswerer` directly, no UI automation); found two real bugs: dates/emotions never reach the chat prompt at all, and AICore's `BUSY` quota needs retry-with-backoff handling (see TODO.md backlog)
+- [x] Calendar view — month grid (`com.kizitonwose.calendar:compose`), mood emoji per day, tap a day to see its entries; first of several "My Diary"-inspired UI replicas (see TODO.md)
+- [x] Edit and delete entries — full-screen `EntryDetailScreen` (Close/Edit/Delete, confirm-before-delete, Previous/Next between entries), shared by the entries list and the calendar day view
+- [x] Title field + backdating — real Room `Migration(1, 2)` adding `title` (not a destructive wipe — see the recorded incident/recovery in TODO.md), `EntryComposeScreen` (a dedicated full-screen write page with a date picker) replaces the old inline compose card
+- [x] Mood picker redesign — a circular avatar opens a bottom-sheet grid (`EmotionPickerSheet`), replacing the inline `FilterChip` row; borderless `PlainTextField`s replace boxed Material3 `TextField`s, both modeled on reference screenshots (see TODO.md)
+- [x] Confirm a successful entry save on a real device — extensively confirmed on-device this pass (save, edit, delete, backdate all verified against the live Room db)
 - [ ] Persist chat history (messages are still in-memory only — lost on navigating away or app restart)
-- [ ] Finalize Room schema/migrations
+- [ ] Finalize Room schema/migrations — real migration infrastructure now exists (`MIGRATION_1_2`), but the broader strategy/versioning discipline is still informal
 - [ ] In-app model download/selection flow
 - [ ] Verify `MediaPipeGemmaInferenceEngine` end-to-end with a real `.task` file — only `AiCoreGemmaInferenceEngine` has been confirmed generating on-device so far; the file pulled from AI Edge Gallery turned out to be `.litertlm`, a different format (see REQUIREMENTS.md)
-- [ ] Confirm a successful entry save on a real device — `EntryScreen` → `EntryRepository` → Room is wired and unit-tested, but the on-device tap-to-save round-trip hasn't been confirmed yet (kept getting interrupted by the model file being wiped on reinstall mid-verification)
 
 ## Human in the loop
 

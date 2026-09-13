@@ -47,7 +47,7 @@ class SeedPepysDiaryEntriesInstrumentedTest {
         val entries = JSONArray(json)
 
         for (i in 0 until entries.length()) {
-            app.entryRepository.save(entries.getString(i), Emotion.NEUTRAL, 3)
+            app.entryRepository.save(title = "", text = entries.getString(i), emotion = Emotion.NEUTRAL, emotionIntensity = 3)
         }
 
         assertTrue("expected the bundled dataset to be non-empty", entries.length() > 0)

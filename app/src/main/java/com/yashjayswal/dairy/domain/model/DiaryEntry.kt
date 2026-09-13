@@ -2,6 +2,7 @@ package com.yashjayswal.dairy.domain.model
 
 data class DiaryEntry(
     val id: Long = 0,
+    val title: String = "",
     val text: String,
     val emotion: Emotion,
     val emotionIntensity: Int, // 1..5

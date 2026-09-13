@@ -1,0 +1,17 @@
+[
+  {"id": "A1", "prompt": "What happened with the fire at Lady Castlemaine's place?"},
+  {"id": "A2", "prompt": "What happened on my birthday?"},
+  {"id": "A3", "prompt": "Was there ever a fire near where the king's mistress lived?"},
+  {"id": "B1", "prompt": "What made my ankle break?"},
+  {"id": "B2", "prompt": "Why did I lie to my doctor about my ankle injury?"},
+  {"id": "B3", "prompt": "What did I say to Elon Musk when I met him?"},
+  {"id": "C1", "prompt": "What did I do today?"},
+  {"id": "C2", "prompt": "What did I write about yesterday?"},
+  {"id": "C3", "prompt": "What was the first thing I ever wrote in this diary?"},
+  {"id": "D1", "prompt": "When do you think I was happiest, consecutively?"},
+  {"id": "D2", "prompt": "Have my moods been getting better or worse recently?"},
+  {"id": "D3", "prompt": "How many times have I written about feeling sad?"},
+  {"id": "E1", "prompt": "hi"},
+  {"id": "E2", "prompt": "how's it going"},
+  {"id": "F1", "prompt": "Did I ever get into an argument or trouble with someone about money?"}
+]
