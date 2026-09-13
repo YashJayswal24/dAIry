@@ -1,14 +1,20 @@
 name: Build APK
 
-# Builds a debug APK on every push to master and publishes it as a rolling
-# "latest" GitHub Release, so there's always one stable, directly
-# downloadable link to the newest build. Also uploaded as a workflow
-# artifact for convenience while looking at a specific run.
+# Builds both a debug APK and a release APK on every push to master and
+# publishes both as a rolling "latest" GitHub Release, so there's always
+# one stable, directly downloadable link to the newest build of each.
+# Also uploaded as workflow artifacts for convenience while looking at a
+# specific run.
 #
-# This is a debug build (self-signed with the default debug keystore) --
-# fine for installing on a device to test, not set up for Play Store
-# distribution. It also does NOT bundle the Gemma/embedding model files
-# (see docs/RUNNING_ON_DEVICE.md) -- those still need to be pushed to the
+# Debug: self-signed with the default debug keystore, unminified,
+# `applicationIdSuffix ".debug"` -- installs side-by-side with release.
+# Release: minified (R8, proguard-android.txt -- see proguard-rules.pro
+# and docs/TODO.md for why not the -optimize variant), also currently
+# signed with the debug keystore (not yet a real release keystore --
+# installable/testable, not Play-Store-ready).
+#
+# Neither build bundles the Gemma/embedding model files (see
+# docs/RUNNING_ON_DEVICE.md) -- those still need to be pushed to the
 # device separately after installing.
 
 on:
@@ -44,11 +50,20 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK as workflow artifact
+      - name: Build release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload debug APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: dairy-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload release APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dairy-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
 
       - name: Publish rolling "latest" release
         uses: softprops/action-gh-release@v2
@@ -58,11 +73,21 @@ jobs:
           body: |
             Automatically built from commit `${{ github.sha }}` on `${{ github.ref_name }}`.
 
-            Debug build, self-signed with the default debug keystore -- for
-            development/testing only. Does not include the Gemma or
-            embedding model files; see docs/RUNNING_ON_DEVICE.md to push
-            those after installing.
-          files: app/build/outputs/apk/debug/app-debug.apk
+            Two APKs, both installable directly (side-by-side, separate
+            app ids and data):
+
+            - `app-debug.apk` -- debug build, unminified, self-signed with
+              the default debug keystore. `com.yashjayswal.dairy.debug`.
+            - `app-release.apk` -- release build, minified (R8), also
+              currently signed with the debug keystore (not yet a real
+              release keystore -- see docs/TODO.md).
+              `com.yashjayswal.dairy`.
+
+            Neither includes the Gemma or embedding model files; see
+            docs/RUNNING_ON_DEVICE.md to push those after installing.
+          files: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release.apk
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

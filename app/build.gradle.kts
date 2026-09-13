@@ -19,9 +19,32 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Standard Android convention: debug and release get distinct
+            // application ids so they install side-by-side as separate
+            // apps with separate data, instead of silently sharing one
+            // data directory (they used to -- see docs/TODO.md incident
+            // notes for why that's dangerous with a real personal-data app).
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = true
+            // Non-optimizing base rules (proguard-android.txt, not
+            // -optimize.txt): R8's aggressive inlining was eliminating
+            // stack frames that MediaPipe's native/JNI layer depends on for
+            // its own caller-class lookup, crashing with "no caller found
+            // on the stack for: <renamed class>" from two different call
+            // paths (chat send, entry save) even after keep rules for the
+            // specific classes involved -- see docs/TODO.md. This keeps
+            // shrinking + renaming (so -keep rules below still matter) but
+            // disables the optimize/inline passes that were breaking it.
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            // Signed with the debug keystore -- installable for personal
+            // use/testing, NOT a Play-Store-ready or properly identified
+            // signed release. See docs/TODO.md for what a real release
+            // keystore would involve.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 

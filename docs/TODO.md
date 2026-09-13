@@ -37,6 +37,71 @@ device, not just before schema migrations — this one wasn't even
 triggered by the migration path with certainty. Cheap insurance either
 way.
 
+## Release APK: minification crashes and the debug/release app-id split (2026-09-13)
+
+User asked for a proper split between the auto-built debug APK and a
+"normal"/release one, both built and installable. This surfaced two real
+issues, both now fixed:
+
+**1. Debug and release used to share one `applicationId`
+(`com.yashjayswal.dairy`)**, so installing one over the other silently
+shared/overwrote the same on-device data directory — dangerous for an app
+holding real personal diary entries. Fixed with the standard Android
+convention: `debug { applicationIdSuffix = ".debug" }`, so debug now
+installs as `com.yashjayswal.dairy.debug` and release stays
+`com.yashjayswal.dairy`, side-by-side apps with fully separate data. The
+302 real entries that were living under the shared package were migrated
+to the new `.debug` package (pulled/verified the db, pushed it into the
+new package's data dir, spot-checked row count and the previously-lost-
+and-recovered entry by content before trusting it), and the old shared
+package's data was then cleared (`pm clear`) so release starts empty
+rather than inheriting old debug data. Release is signed with the debug
+keystore for now (user's explicit choice — installable/testable, not
+Play-Store-ready; see the `signingConfig` comment in `build.gradle.kts`
+for what a real release keystore would involve later).
+
+**2. Enabling `isMinifyEnabled` on release (needed for a reasonably-sized
+release APK) broke on-device at runtime, repeatedly, across two different
+Google AI libraries** — R8's default `proguard-android-optimize.txt`
+rules are written for typical app code, not for libraries whose native
+(JNI) side does its own reflective/stack-based lookups of Java class
+identity, which R8's renaming and inlining both silently break with no
+compile-time warning:
+  - AICore's AutoValue-generated code referenced compiler-only
+    `javax.lang.model.*` classes never actually called at runtime →
+    `-dontwarn` rules (from R8's own generated `missing_rules.txt`).
+  - AICore's Protobuf-Lite messages look up their fields reflectively by
+    name → R8's default field renaming broke that
+    (`Field platform_ for S2.D not found` sending a chat message) → the
+    standard `-keepclassmembers ... GeneratedMessageLite { <fields>; }`
+    rule.
+  - MediaPipe's native layer does its own stack-based caller-class lookup
+    and crashed with `IllegalStateException: no caller found on the stack
+    for: <renamed class>` — first on chat send, then *again* on entry
+    save via a different renamed class, even after adding
+    `-keep class com.google.mediapipe.** { *; }`. That a same-mechanism
+    crash recurred via a different code path after a keep rule that
+    should have covered it pointed at R8's **inlining** (not just
+    renaming) eliminating stack frames the native code depends on —
+    inlining isn't addressed by `-keep` rules at all.
+  - **Fix**: switched the release build's proguard base file from
+    `proguard-android-optimize.txt` to plain `proguard-android.txt` (still
+    shrinks and renames, but skips the aggressive optimize/inline passes).
+    Rebuilt, reinstalled fresh to the now-cleared release package,
+    retested both crash sites (chat send via AICore, entry save via
+    MediaPipe embeddings) plus a full logcat scan for any error-level
+    output — clean on both, no crashes, no errors. This is the fix that
+    actually held; the previous two targeted `-keep` rules were each
+    necessary but not sufficient on their own.
+
+Not yet done: a CI job that builds+publishes the release APK the same way
+`build-apk.yml` already does for debug (currently release is only built
+locally); broader release-build regression testing beyond the two
+previously-crashing paths (e.g. edit/delete, calendar, backdating haven't
+been explicitly re-verified under the new release build, though none of
+them touch the R8-sensitive native/reflection code paths that actually
+crashed).
+
 ## Done, this pass
 
 - **Edit and delete entries.** `EntryDao`/`EntryRepository` gained real
