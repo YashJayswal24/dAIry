@@ -274,6 +274,43 @@ Also still relevant from the original research pass:
 
 ## Backlog
 
+- [ ] Test coverage gaps, from an audit on 2026-09-13 (comparing every
+      file in `app/src/main` against what actually has an automated
+      test, not assuming coverage exists). Quick wins first, most
+      valuable last:
+      - [ ] `DiaryEntryDisplay.displayTitle()` — has real logic (blank
+        title falls back to derived text, 50-char truncation with an
+        ellipsis) and zero test coverage. Trivial unit test.
+      - [ ] `ThemeMode.next()` — the light/dark/system cycling logic,
+        untested. Trivial unit test.
+      - [ ] **The Room migration itself** (`DairyDatabaseMigrations.kt`,
+        `MIGRATION_1_2`) has never been run in an automated test — only
+        verified manually via adb on 2026-09-13, the same day a real
+        entry was briefly lost during that exact manual verification
+        (see the incident note above). Add a real migration test using
+        Room's `MigrationTestHelper` (needs the
+        `androidx.room:room-testing` dependency): create a v1 database
+        with a `MigrationTestHelper`, populate a row, run
+        `MIGRATION_1_2`, assert the row and its data survive with the
+        new `title` column defaulted correctly. This is the highest-value
+        item on this list given what already happened once.
+      - [ ] `EntryDao`'s actual `@Query` strings (the hand-written
+        `UPDATE`/`DELETE` SQL) have only ever run against fakes in
+        `EntryRepositoryTest` — never against a real Room/SQLite
+        instance in an automated test. An in-memory Room instrumented
+        test (`Room.inMemoryDatabaseBuilder`) exercising the real DAO
+        would catch a real SQL bug that a fake can't.
+      - [ ] `DairyApplication.gemmaInferenceEngine()`'s caching/Mutex
+        logic is untested (mirrors the already-tested lazy-init pattern
+        in `MediaPipeEmbeddingEngine`, but was never covered itself).
+      - Accepted, not a gap to close: `MainActivity` and the Compose
+        screens themselves (`EntryScreen`, `EntryComposeScreen`,
+        `ChatScreen`, `CalendarScreen`'s rendering) have no direct test
+        coverage — this project has no Compose UI test framework set up,
+        and pulling the *testable logic* out into plain functions
+        (`ChatAnswerer`, `previousEntry`/`nextEntry`,
+        `sundayFirstDaysOfWeek`) has been the deliberate strategy instead
+        of adding one. Revisit only if that stops being enough.
 - [ ] Handle AICore's `BUSY` quota (error code 9) in
       `AiCoreGemmaInferenceEngine` — running the eval suite
       (`RunEvalPromptsInstrumentedTest`) 15 calls back-to-back (~5-7s
