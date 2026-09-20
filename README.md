@@ -7,13 +7,19 @@ in your own past entries — using a Gemma model running entirely on-device.
 
 No entry, embedding, or question ever needs to leave the phone.
 
-> **Status: early scaffold.** This repo is currently a shell/skeleton — project
-> structure, build files, and placeholder classes with a clear architecture,
-> not a working app yet. See [Roadmap](#roadmap).
+> **Status: working app, in daily use.** Writing entries, editing/deleting
+> them, browsing by calendar, and chatting with an on-device Gemma model
+> grounded in your own entries are all implemented and verified on a real
+> device. A few things are still open — chat history isn't persisted yet,
+> and there's no in-app model download flow — see [Roadmap](#roadmap).
 
-## Features (target)
+## Features
 
-- Write entries with free text + an emotion label and 1–5 intensity.
+- Write entries with free text, a title, a date (backdate freely), and an
+  emotion + 1–5 intensity, picked from a bottom-sheet mood grid.
+- Edit or delete any past entry; embeddings are re-computed or removed to
+  match.
+- Browse entries by calendar month, with a mood emoji per day.
 - Everything stored locally (Room/SQLite) — no account, no server, no sync.
 - Ask natural-language questions about your own diary; a RAG pipeline finds
   the most relevant past entries and an on-device Gemma model answers using
@@ -75,6 +81,19 @@ Full breakdown (APIs, permissions, RAM, storage, min SDK) in
 
 ## Getting started
 
+**Fastest path — prebuilt APK:** every push to `master` auto-builds a debug
+and a release APK and attaches both to the
+[`latest` GitHub Release](https://github.com/YashJayswal24/dAIry/releases/tag/latest).
+Debug (`app-debug.apk`, `com.yashjayswal.dairy.debug`) and release
+(`app-release.apk`, `com.yashjayswal.dairy`, minified) install side-by-side
+as separate apps with separate data. Release is currently signed with the
+debug keystore (not yet Play-Store-ready — see
+[docs/TODO.md](docs/TODO.md)). Neither bundles the Gemma/embedding model
+files; push those separately per
+[docs/RUNNING_ON_DEVICE.md](docs/RUNNING_ON_DEVICE.md).
+
+**Building from source:**
+
 1. Clone the repo and open it in Android Studio (Ladybug or newer). Android
    Studio will offer to generate the Gradle wrapper on first sync — accept it.
 2. Obtain a Gemma `.task` model converted for MediaPipe LLM Inference (see
@@ -128,6 +147,7 @@ work back up).
 - [x] Title field + backdating — real Room `Migration(1, 2)` adding `title` (not a destructive wipe — see the recorded incident/recovery in TODO.md), `EntryComposeScreen` (a dedicated full-screen write page with a date picker) replaces the old inline compose card
 - [x] Mood picker redesign — a circular avatar opens a bottom-sheet grid (`EmotionPickerSheet`), replacing the inline `FilterChip` row; borderless `PlainTextField`s replace boxed Material3 `TextField`s, both modeled on reference screenshots (see TODO.md)
 - [x] Confirm a successful entry save on a real device — extensively confirmed on-device this pass (save, edit, delete, backdate all verified against the live Room db)
+- [x] Separate debug/release builds — distinct application ids (`applicationIdSuffix`) so they install side-by-side with separate data; release minification (R8) fixed after diagnosing crashes in AICore's and MediaPipe's native/reflection-dependent code (see TODO.md); CI now builds and auto-publishes both APKs on every push
 - [ ] Persist chat history (messages are still in-memory only — lost on navigating away or app restart)
 - [ ] Finalize Room schema/migrations — real migration infrastructure now exists (`MIGRATION_1_2`), but the broader strategy/versioning discipline is still informal
 - [ ] In-app model download/selection flow
