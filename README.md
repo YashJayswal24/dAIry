@@ -13,6 +13,15 @@ No entry, embedding, or question ever needs to leave the phone.
 > device. A few things are still open — chat history isn't persisted yet,
 > and there's no in-app model download flow — see [Roadmap](#roadmap).
 
+## Screenshots
+
+Running on a real phone, fully on-device. The entries shown are public-domain
+diary text (Samuel Pepys) used as test data, not personal entries.
+
+| Entries | Write | Calendar | Ask your diary |
+|---|---|---|---|
+| <img src="docs/screenshots/entries.png" width="200" /> | <img src="docs/screenshots/write.png" width="200" /> | <img src="docs/screenshots/calendar.png" width="200" /> | <img src="docs/screenshots/chat.png" width="200" /> |
+
 ## Features
 
 - Write entries with free text, a title, a date (backdate freely), and an
