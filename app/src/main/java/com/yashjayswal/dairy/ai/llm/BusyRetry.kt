@@ -25,6 +25,7 @@ suspend fun <T> retryWhileBusy(
     maxTotalWaitMs: Long = 30_000,
     isBusy: (Throwable) -> Boolean,
     sleep: suspend (Long) -> Unit = { delay(it) },
+    onRetry: (attempt: Int, waitMs: Long) -> Unit = { _, _ -> },
     block: suspend () -> T
 ): T {
     var nextDelayMs = initialDelayMs
@@ -38,6 +39,7 @@ suspend fun <T> retryWhileBusy(
             if (attempt >= maxAttempts || totalWaitedMs + nextDelayMs > maxTotalWaitMs) {
                 throw BusyRetriesExhaustedException(attempt, e)
             }
+            onRetry(attempt, nextDelayMs)
             sleep(nextDelayMs)
             totalWaitedMs += nextDelayMs
             nextDelayMs *= 2

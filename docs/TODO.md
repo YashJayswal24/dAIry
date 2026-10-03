@@ -193,11 +193,9 @@ crashed).
 
 ## Next up
 
-- Verify the AICore `BUSY` retry on a device (code and unit tests are
-  done, see Backlog): run `RunEvalPromptsInstrumentedTest` back-to-back,
-  confirm all 15 prompts complete, then tick it. Then the date/mood
-  chat-context gap (diagnosed in the Backlog below) is the other
-  highest-value chat fix.
+- The date/mood chat-context gap (diagnosed in the Backlog below) is the
+  highest-value remaining chat fix. The AICore `BUSY` retry is done and
+  verified on a device.
 - Check the redesigned UI in **light** mode too (only verified in dark
   mode on-device so far) — the custom color scheme defines both, but
   only one has been visually confirmed.
@@ -378,10 +376,14 @@ Also still relevant from the original research pass:
         (`ChatAnswerer`, `previousEntry`/`nextEntry`,
         `sundayFirstDaysOfWeek`) has been the deliberate strategy instead
         of adding one. Revisit only if that stops being enough.
-- [ ] Handle AICore's `BUSY` quota (error code 9) in
+- [x] Handle AICore's `BUSY` quota (error code 9) in
       `AiCoreGemmaInferenceEngine`.
-      **Status (2026-10-03): implemented and unit-tested, NOT yet verified
-      on a device, so not ticked.** `generate()` now wraps the call in
+      **Done and verified on device (2026-10-03):** ran
+      `RunEvalPromptsInstrumentedTest` back-to-back with no spacing on the
+      Galaxy S26 Ultra: all 15 prompts completed with real replies in
+      149.6s. BUSY did fire: 6 retry waits across 4 prompts (two prompts
+      needed 2 retries, two needed 1), every one recovered, none
+      exhausted the cap. `generate()` now wraps the call in
       `retryWhileBusy` (`ai/llm/BusyRetry.kt`): retries only `BUSY`
       (directly or wrapped), exponential backoff 2s/4s/8s, max 4 attempts
       and 30s total wait, then throws `BusyRetriesExhaustedException`
@@ -389,9 +391,7 @@ Also still relevant from the original research pass:
       error rethrows immediately; no MediaPipe fallback (still
       unverified). 7 unit tests in `BusyRetryTest`, all passing. The 15s
       spacing workaround was removed from `RunEvalPromptsInstrumentedTest`.
-      **Still to do:** run that eval suite back-to-back on a real device,
-      confirm all 15 prompts complete, record how many retries happened,
-      then tick this. **Correction:** the `getRetryDelay()` mentioned
+      **Correction:** the `getRetryDelay()` mentioned
       below does not exist in the pinned `genai-common` 1.0.0-beta3 /
       `genai-prompt` 1.0.0-beta2 (checked with `javap`); only
       `getErrorCode()` does, hence the fixed backoff.

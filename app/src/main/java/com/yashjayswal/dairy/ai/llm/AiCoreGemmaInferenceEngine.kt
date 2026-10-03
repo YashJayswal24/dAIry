@@ -27,7 +27,10 @@ class AiCoreGemmaInferenceEngine private constructor(
 ) : GemmaInferenceEngine {
 
     override suspend fun generate(prompt: String): String = withContext(Dispatchers.IO) {
-        retryWhileBusy(isBusy = ::isBusyError) {
+        retryWhileBusy(
+            isBusy = ::isBusyError,
+            onRetry = { attempt, waitMs -> Log.w(TAG, "AICore BUSY on attempt $attempt, retrying in ${waitMs}ms") }
+        ) {
             model.generateContent(prompt).candidates.first().text
         }
     }
