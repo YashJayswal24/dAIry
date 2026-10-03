@@ -60,14 +60,6 @@ class RunEvalPromptsInstrumentedTest {
 
             val results = JSONArray()
             for (i in 0 until prompts.length()) {
-                if (i > 0) {
-                    // Real wall-clock pause (runTest's delay() is virtual
-                    // and would be skipped) -- spacing calls out like a
-                    // human typing, to test whether AiCoreGemmaInferenceEngine's
-                    // ErrorCode 9 failures are a rate limit rather than a
-                    // fixed per-session call count.
-                    Thread.sleep(15_000)
-                }
                 val entry = prompts.getJSONObject(i)
                 val id = entry.getString("id")
                 val question = entry.getString("prompt")

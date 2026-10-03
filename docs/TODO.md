@@ -193,9 +193,11 @@ crashed).
 
 ## Next up
 
-- Fix the AICore `BUSY` quota handling and the date/mood chat-context gap
-  — both fully diagnosed and documented in the Backlog below, from
-  running the eval suite. These are the two highest-value chat fixes.
+- Verify the AICore `BUSY` retry on a device (code and unit tests are
+  done, see Backlog): run `RunEvalPromptsInstrumentedTest` back-to-back,
+  confirm all 15 prompts complete, then tick it. Then the date/mood
+  chat-context gap (diagnosed in the Backlog below) is the other
+  highest-value chat fix.
 - Check the redesigned UI in **light** mode too (only verified in dark
   mode on-device so far) — the custom color scheme defines both, but
   only one has been visually confirmed.
@@ -377,7 +379,23 @@ Also still relevant from the original research pass:
         `sundayFirstDaysOfWeek`) has been the deliberate strategy instead
         of adding one. Revisit only if that stops being enough.
 - [ ] Handle AICore's `BUSY` quota (error code 9) in
-      `AiCoreGemmaInferenceEngine` — running the eval suite
+      `AiCoreGemmaInferenceEngine`.
+      **Status (2026-10-03): implemented and unit-tested, NOT yet verified
+      on a device, so not ticked.** `generate()` now wraps the call in
+      `retryWhileBusy` (`ai/llm/BusyRetry.kt`): retries only `BUSY`
+      (directly or wrapped), exponential backoff 2s/4s/8s, max 4 attempts
+      and 30s total wait, then throws `BusyRetriesExhaustedException`
+      (clear message, shown by `ChatAnswerer`'s existing catch). Any other
+      error rethrows immediately; no MediaPipe fallback (still
+      unverified). 7 unit tests in `BusyRetryTest`, all passing. The 15s
+      spacing workaround was removed from `RunEvalPromptsInstrumentedTest`.
+      **Still to do:** run that eval suite back-to-back on a real device,
+      confirm all 15 prompts complete, record how many retries happened,
+      then tick this. **Correction:** the `getRetryDelay()` mentioned
+      below does not exist in the pinned `genai-common` 1.0.0-beta3 /
+      `genai-prompt` 1.0.0-beta2 (checked with `javap`); only
+      `getErrorCode()` does, hence the fixed backoff.
+      Original diagnosis: running the eval suite
       (`RunEvalPromptsInstrumentedTest`) 15 calls back-to-back (~5-7s
       apart) hit `GenAiException [ErrorCode 9]` after 10 calls, twice.
       Initially misread as a fixed ~10-call session cap (wrong — see

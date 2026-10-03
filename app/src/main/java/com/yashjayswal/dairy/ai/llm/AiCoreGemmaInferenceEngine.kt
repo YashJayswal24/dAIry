@@ -3,6 +3,7 @@ package com.yashjayswal.dairy.ai.llm
 import android.util.Log
 import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.common.GenAiException
 import com.google.mlkit.genai.prompt.Generation
 import com.google.mlkit.genai.prompt.GenerativeModel
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +27,9 @@ class AiCoreGemmaInferenceEngine private constructor(
 ) : GemmaInferenceEngine {
 
     override suspend fun generate(prompt: String): String = withContext(Dispatchers.IO) {
-        model.generateContent(prompt).candidates.first().text
+        retryWhileBusy(isBusy = ::isBusyError) {
+            model.generateContent(prompt).candidates.first().text
+        }
     }
 
     fun close() = model.close()
@@ -70,6 +73,12 @@ class AiCoreGemmaInferenceEngine private constructor(
                 }
             }
         }
+
+        /** True for AICore's rolling-quota BUSY error (code 9), directly or wrapped in another exception. */
+        internal fun isBusyError(t: Throwable): Boolean =
+            generateSequence(t) { it.cause }.any {
+                it is GenAiException && it.errorCode == GenAiException.ErrorCode.BUSY
+            }
 
         /** Pure branching logic, kept separate from the real client so it's unit-testable. */
         internal fun decideAvailability(@FeatureStatus status: Int): AvailabilityDecision = when (status) {
